@@ -17,6 +17,7 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     implementation(kotlin("stdlib"))
+    implementation("io.javalin:javalin:6.4.0")
 }
 
 java {
@@ -25,6 +26,14 @@ java {
 
 tasks.shadowJar {
     archiveClassifier.set("")
+    
+    mergeServiceFiles()
+    
+    exclude("META-INF/LICENSE")
+    exclude("META-INF/LICENSE.txt")
+    exclude("META-INF/NOTICE")
+    exclude("META-INF/NOTICE.txt")
+    exclude("META-INF/DEPENDENCIES")
 }
 
 tasks.build {
