@@ -1,0 +1,4 @@
+name: Filed
+version: 0.1.0
+main: dev.osh.filed.Filed
+api-version: "1.21"
