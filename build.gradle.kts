@@ -1,10 +1,6 @@
 plugins {
-  // Replace `<...>` with the plugin name appropriate for your target environment
     kotlin("jvm") version "2.3.0"
-  // For example, if your target environment is JVM:
-  // kotlin("jvm") version "2.3.0"
-  // If your target is Kotlin Multiplatform:
-  // kotlin("multiplatform") version "2.3.0"
+    id("com.gradleup.shadow") version "9.0.0-beta12"
 }
 
 group = "dev.osh"
@@ -19,9 +15,18 @@ repositories {
 }
 
 dependencies {
-  compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    implementation(kotlin("stdlib"))
 }
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }
