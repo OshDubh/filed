@@ -9,7 +9,11 @@ class Filed : JavaPlugin() {
     private lateinit var server: HttpServer
 
     override fun onEnable() {
-        server = HttpServer.create(InetSocketAddress(8080), 0)
+        saveDefaultConfig()
+        
+        val port = config.getInt("port", 9847)
+        
+        server = HttpServer.create(InetSocketAddress(port), 0)
         
         server.createContext("/health") { exchange ->
             val response = """{"status": "ok"}"""
@@ -20,7 +24,7 @@ class Filed : JavaPlugin() {
         }
         
         server.start()
-        logger.info("Filed API running on port 8080")
+        logger.info("Filed API running on port $port")
     }
 
     override fun onDisable() {
