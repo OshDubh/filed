@@ -28,13 +28,12 @@ java {
 
 tasks.shadowJar {
     archiveClassifier.set("")
-    
     mergeServiceFiles()
     
-    exclude("META-INF/LICENSE")
-    exclude("META-INF/LICENSE.txt")
-    exclude("META-INF/NOTICE")
-    exclude("META-INF/NOTICE.txt")
+    exclude("META-INF/LICENSE*")
+    exclude("META-INF/NOTICE*")
+    exclude("META-INF/*-LICENSE")
+    exclude("META-INF/*-NOTICE")
     exclude("META-INF/DEPENDENCIES")
 }
 
