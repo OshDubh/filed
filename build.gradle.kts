@@ -17,7 +17,9 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     implementation(kotlin("stdlib"))
-    implementation("io.javalin:javalin:6.4.0")
+    implementation("io.javalin:javalin:6.7.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.20.1")
+    implementation("tools.jackson.module:jackson-module-kotlin:3.0.0-SNAPSHOT")
 }
 
 java {
