@@ -14,8 +14,11 @@ class Filed : JavaPlugin() {
         val allowedFiles = config.getStringList("allowed.files")
         val allowedDirs = config.getStringList("allowed.directories")
 
-        logger.info("Allowed files: $allowedFiles")
-        logger.info("Allowed directories: $allowedDirs")
+        val Files = Files(
+            allowedFiles = config.getStringList("allowed.files"),
+            allowedDirs = config.getStringList("allowed.directories"),
+            serverRoot = server.worldContainer.toPath()
+        )
 
         app = Javalin.create { config ->
             config.showJavalinBanner = false
