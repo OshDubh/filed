@@ -1,1 +1,8 @@
 port: 9847
+
+allowed:
+  files:
+    - "server.properties"
+  directories:
+    - "world/stats"
+

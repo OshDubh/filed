@@ -9,9 +9,14 @@ class Filed : JavaPlugin() {
 
     override fun onEnable() {
         saveDefaultConfig()
-        
+
         val port = config.getInt("port", 9847)
-        
+        val allowedFiles = config.getStringList("allowed.files")
+        val allowedDirs = config.getStringList("allowed.directories")
+
+        logger.info("Allowed files: $allowedFiles")
+        logger.info("Allowed directories: $allowedDirs")
+
         app = Javalin.create { config ->
             config.showJavalinBanner = false
         }.apply {
@@ -20,7 +25,7 @@ class Filed : JavaPlugin() {
             }
             start(port)
         }
-        
+
         logger.info("Filed API running on port $port")
     }
 
