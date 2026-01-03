@@ -42,19 +42,19 @@ class Filed : JavaPlugin() {
             }
             get("/directory") { req ->
                 val path = req.queryParam("path") ?: ""
-                val allowed = fileService.isAllowed(path)
-                if (allowed) {
-                    req.status(200)
-                } else {
-                    req.status(403)
-                }
 
-                
+                when(val result = fileService.listFiles(path)) {
+                    is FileResult.Success -> req.json(result.files)
+                    is FileResult.Error -> {
+                        req.status(result.code)
+                        req.json(mapOf("error" to result.message))
+                    }
+                }
             }
             start(port)
         }
 
-        logger.info("Filed API running on port $port")
+        logger.info("Filed available on port $port")
     }
 
     override fun onDisable() {
