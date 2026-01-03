@@ -1,8 +1,8 @@
 package dev.osh.filed
 
-import java.nio.file.Path
+import java.nio.file.*
 
-class Files(
+class FileService(
     private val allowedFiles: List<String>,
     private val allowedDirectories: List<String>,
     private val serverRoot: Path
@@ -28,5 +28,13 @@ class Files(
         }
 
         return false
+    }
+
+    fun listFiles(directoryPath: String): List<String> {
+        val directory = Path.get(directoryPath)
+        val stream = Files.newDirectoryStream(directory)
+        for (file : stream) {
+            // append the list?
+        }
     }
 }

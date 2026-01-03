@@ -15,7 +15,7 @@ class Filed : JavaPlugin() {
         val allowedDirectories = config.getStringList("allowed.directories")
 
         // for performing file operations
-        val files = Files(
+        val fileService = FileService(
             allowedFiles = config.getStringList("allowed.files"),
             allowedDirectories = config.getStringList("allowed.directories"),
             serverRoot = server.worldContainer.toPath()
@@ -27,11 +27,29 @@ class Filed : JavaPlugin() {
         }.apply {
             get("/health") { req ->
                 req.json(mapOf("status" to "ok"))
+                req.status(200)
             }
-            get("/files") { req ->
+            get("/file") { req ->
                 // read the path specified and check if it's allowed
                 val path = req.queryParam("path") ?: ""
-                req.result("Allowed: ${files.isAllowed(path)}")
+                val allowed = fileService.isAllowed(path)
+                if (allowed) {
+                    req.status(200)
+                } else {
+                    req.status(403)
+                }
+
+            }
+            get("/directory") { req ->
+                val path = req.queryParam("path") ?: ""
+                val allowed = fileService.isAllowed(path)
+                if (allowed) {
+                    req.status(200)
+                } else {
+                    req.status(403)
+                }
+
+                
             }
             start(port)
         }
