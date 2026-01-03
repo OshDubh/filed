@@ -8,23 +8,30 @@ class Filed : JavaPlugin() {
     private var app: Javalin? = null
 
     override fun onEnable() {
+        // create/load our config
         saveDefaultConfig()
-
         val port = config.getInt("port", 9847)
         val allowedFiles = config.getStringList("allowed.files")
-        val allowedDirs = config.getStringList("allowed.directories")
+        val allowedDirectories = config.getStringList("allowed.directories")
 
-        val Files = Files(
+        // for performing file operations
+        val files = Files(
             allowedFiles = config.getStringList("allowed.files"),
-            allowedDirs = config.getStringList("allowed.directories"),
+            allowedDirectories = config.getStringList("allowed.directories"),
             serverRoot = server.worldContainer.toPath()
         )
 
+        // serve the API and respond to requests
         app = Javalin.create { config ->
             config.showJavalinBanner = false
         }.apply {
-            get("/health") { ctx ->
-                ctx.json(mapOf("status" to "ok"))
+            get("/health") { req ->
+                req.json(mapOf("status" to "ok"))
+            }
+            get("/files") { req ->
+                // read the path specified and check if it's allowed
+                val path = req.queryParam("path") ?: ""
+                req.result("Allowed: ${files.isAllowed(path)}")
             }
             start(port)
         }
