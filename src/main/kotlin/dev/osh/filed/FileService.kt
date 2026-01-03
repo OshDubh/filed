@@ -1,6 +1,7 @@
 package dev.osh.filed
 
-import java.nio.file.*
+import java.nio.file.Path
+import kotlin.io.path.*
 
 // tagged union; returns only T and is only one of Success or Error (which we construct here)
 sealed class Result<out T> {
@@ -36,25 +37,40 @@ class FileService(
         return false
     }
 
-    fun listFiles(directoryPath: String): Result<List<String>> {
-        if (!isAllowed(directoryPath)) {
+    fun listFiles(dirpath: String): Result<List<String>> {
+        if (!isAllowed(dirpath)) {
             return Result.Error("path not allowed by existing configuration", 403)
         }
         
-        val path = serverRoot.resolve(directoryPath) // join the requested path with the local one
+        val path = serverRoot.resolve(dirpath) // join the requested path with the local one
 
-        if (!Files.exists(path)) {
+        if (!path.exists()) {
             return Result.Error("directory not found", 404)
         }
         
-        if (!Files.isDirectory(path)) {
+        if (!path.isDirectory()) {
             return Result.Error("not a directory", 400)
         }
 
-        val files = Files.list(path).use { stream ->
-            stream.map { it.fileName.toString() }.toList()
+        val files = path.listDirectoryEntries().map { it.fileName.toString() }
+        return Result.Success(files)
+    }
+
+    fun getFile(filepath: String): Result<String> {
+        if (!isAllowed(filepath)) {
+            return Result.Error("file access not permitted by existing configuration", 403)
         }
 
-        return Result.Success(files)
+        val path = serverRoot.resolve(filepath)
+
+        if (!path.exists()) {
+            return Result.Error("file not found", 404)
+        }
+
+        if (path.isDirectory()) {
+            return Result.Error("path is a directory", 400)
+        }
+
+        return Result.Success(path.readText())
     }
 }
