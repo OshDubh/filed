@@ -44,8 +44,8 @@ class Filed : JavaPlugin() {
                 val path = req.queryParam("path") ?: ""
 
                 when(val result = fileService.listFiles(path)) {
-                    is FileResult.Success -> req.json(result.files)
-                    is FileResult.Error -> {
+                    is Result.Success<List<String>> -> req.json(result.data)
+                    is Result.Error -> {
                         req.status(result.code)
                         req.json(mapOf("error" to result.message))
                     }

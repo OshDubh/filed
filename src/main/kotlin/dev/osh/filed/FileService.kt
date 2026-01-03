@@ -2,9 +2,10 @@ package dev.osh.filed
 
 import java.nio.file.*
 
-sealed class FileResult {
-    data class Success(val files: List<String>): FileResult()
-    data class Error(val message: String, val code: Int) : FileResult()
+// tagged union; returns only T and is only one of Success or Error (which we construct here)
+sealed class Result<out T> {
+    data class Success<T>(val data: T): Result<T>() // T but output only
+    data class Error(val message: String, val code: Int) : Result<Nothing>() // Error has no data we want to return
 }
 
 class FileService(
@@ -12,7 +13,7 @@ class FileService(
     private val allowedDirectories: List<String>,
     private val serverRoot: Path
 ) {
-
+    
     fun isAllowed(path: String): Boolean {
         // prevent .. escape
         val normalised = Path.of(path).normalize().toString()
@@ -35,25 +36,25 @@ class FileService(
         return false
     }
 
-    fun listFiles(directoryPath: String): FileResult {
+    fun listFiles(directoryPath: String): Result<List<String>> {
         if (!isAllowed(directoryPath)) {
-            return FileResult.Error("path not allowed by existing configuration", 403)
+            return Result.Error("path not allowed by existing configuration", 403)
         }
-
+        
         val path = serverRoot.resolve(directoryPath) // join the requested path with the local one
 
         if (!Files.exists(path)) {
-            return FileResult.Error("directory not found", 404)
+            return Result.Error("directory not found", 404)
         }
-
+        
         if (!Files.isDirectory(path)) {
-            return FileResult.Error("not a directory", 400)
+            return Result.Error("not a directory", 400)
         }
 
         val files = Files.list(path).use { stream ->
             stream.map { it.fileName.toString() }.toList()
         }
 
-        return FileResult.Success(files)
+        return Result.Success(files)
     }
 }
