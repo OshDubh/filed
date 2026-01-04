@@ -18,16 +18,17 @@ sealed class Response {
 class FileService(
     private val allowedFiles: List<String>,
     private val allowedDirectories: List<String>,
-    private val serverRoot: Path
+    private val serverRoot: Path,
+    private val maximumAllowedFileSize: Int
 ) {
 
     fun read(requestedPath: String, lines: IntRange? = null, bytes: IntRange? = null, includeContent: Boolean = true): Result<Response> {
         // prevent .. escape
         val normalised = Path.of(requestedPath).normalize().toString()
-        val allowed = isAllowed(normalised)
+        val path = serverRoot.resolve(normalised)
+        val allowed = isAllowed(normalised, path)
         if (allowed != null) return allowed
 
-        val path = serverRoot.resolve(normalised)
 
         // delegate returning the correct response type
         return when {
@@ -40,10 +41,10 @@ class FileService(
 
     fun write(requestedPath: String, content: String): Result<Response> {
         val normalised = Path.of(requestedPath).normalize().toString()
-        val allowed = isAllowed(normalised)
+        val path = serverRoot.resolve(normalised)
+        val allowed = isAllowed(normalised, path)
         if (allowed != null) return allowed
 
-        val path = serverRoot.resolve(normalised)
 
         if (path.isDirectory()) return Result.Error("cannot write to a directory", 400)
         if (!path.parent.isDirectory()) return Result.Error("parent directory does not exist", 400)
@@ -54,20 +55,22 @@ class FileService(
 
     fun delete(requestedPath: String): Result<Response> {
         val normalised = Path.of(requestedPath).normalize().toString()
-        val allowed = isAllowed(normalised)
-        if (allowed != null) return allowed
-
         val path = serverRoot.resolve(normalised)
-        val content = path.readText()
+
+        val allowed = isAllowed(normalised, path)
+        if (allowed != null) return allowed
+        if (!path.exists()) return Result.Error("file not found", 404)
         if (path.isDirectory()) return Result.Error("cannot delete directories", 400)
 
+        val content = path.readText()
+
         return runCatching {path.deleteIfExists()}.fold(
-            onSuccess = {Result.Success(Response.File(path = normalised))},
+            onSuccess = {Result.Success(Response.File(path = normalised, content = content))},
             onFailure = {Result.Error("error deleting file: ${it.message}", 500)}
         )
     }
 
-    private fun isAllowed(normalised: String): Result<Nothing>? {
+    private fun isAllowed(normalised: String, path: Path): Result<Nothing>? {
         if (normalised.startsWith("..")) {
             return Result.Error("invalid path", 400)
         }
@@ -76,6 +79,16 @@ class FileService(
         val allowed = normalised in allowedFiles || allowedDirectories.any {dir -> normalised.startsWith("$dir/") || normalised == dir}
         if (!allowed) {
             return Result.Error("path not allowed by existing configuration rules", 403)
+        }
+
+        if (path.exists()) {
+            if (!path.toRealPath().startsWith(serverRoot.toRealPath())) {
+                return Result.Error("file's actual path not allowed by existing configuration rules", 403)
+            }
+
+            if (path.fileSize() > maximumAllowedFileSize) {
+                return Result.Error("file too large (${path.fileSize()} vs a configured maximum allowed file size of ${maximumAllowedFileSize}), consider reading as a stream", 413)
+            }
         }
 
         return null

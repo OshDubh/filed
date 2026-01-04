@@ -11,14 +11,13 @@ class Filed : JavaPlugin() {
         // create/load our config
         saveDefaultConfig()
         val port = config.getInt("port", 9847)
-        val allowedFiles = config.getStringList("allowed.files")
-        val allowedDirectories = config.getStringList("allowed.directories")
 
         // for performing file operations
         val fileService = FileService(
             allowedFiles = config.getStringList("allowed.files"),
             allowedDirectories = config.getStringList("allowed.directories"),
-            serverRoot = server.worldContainer.toPath()
+            serverRoot = server.worldContainer.toPath(),
+            maximumAllowedFileSize = config.getInt("maximum_allowed_file_size", 1_000_000)
         )
 
         // serve the API and respond to requests
