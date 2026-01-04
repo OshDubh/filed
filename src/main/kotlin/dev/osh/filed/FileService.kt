@@ -33,19 +33,20 @@ class FileService(
         if (!allowed) {
             return Result.Error("path not allowed by existing configuration rules", 403)
         }
-        
+
         val path = serverRoot.resolve(normalised)
 
         // delegate returning the correct response type
         return when {
             !path.exists() -> Result.Error("file not found", 404)
-            path.isDirectory() -> getFiles(path, includeContent)
-            path.isRegularFile() -> getFile(path, includeContent)
+            path.isDirectory() -> getFiles(normalised, path, includeContent)
+            path.isRegularFile() -> getFile(normalised, path, includeContent)
             else -> Result.Error("neither a file nor a directory", 400)
         }
     }
     
     private fun getFiles(normalised: String, path: Path, includeContent: Boolean): Result<Response> {
+        // list all the files in the directory, filtering out any directories, and including their contentents if requested
         val files = path.listDirectoryEntries()
             .filter {it.isRegularFile()}
             .map {entry -> Response.File(path = entry.fileName.toString(), content = if (includeContent) entry.readText() else null)}
@@ -54,6 +55,7 @@ class FileService(
     }
 
     private fun getFile(normalised: String, path: Path, includeContent: Boolean): Result<Response> {
+        // just return both the normalised filepath and the content of the file as text, if requested from the API
         return Result.Success(Response.File(path = normalised, content = if (includeContent) path.readText() else null))
     }
 }

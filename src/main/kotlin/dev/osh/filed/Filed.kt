@@ -29,24 +29,12 @@ class Filed : JavaPlugin() {
                 req.json(mapOf("status" to "ok"))
                 req.status(200)
             }
-            get("/file") { req ->
-                // read the path specified and check if it's allowed
+            get("/files") { req ->
                 val path = req.queryParam("path") ?: ""
+                val includeContent = req.queryParam("content") == "true"
 
-                when(val result = fileService.getFile(path)) {
-                    is Result.Success<String> -> req.result(result.data)
-                    is Result.Error -> {
-                        req.status(result.code)
-                        req.json(mapOf("error" to result.message))
-                    }
-                }
-
-            }
-            get("/directory") { req ->
-                val path = req.queryParam("path") ?: ""
-
-                when(val result = fileService.listFiles(path)) {
-                    is Result.Success<List<String>> -> req.json(result.data)
+                when(val result = fileService.read(path)) {
+                    is Result.Success -> req.json(result.data)
                     is Result.Error -> {
                         req.status(result.code)
                         req.json(mapOf("error" to result.message))
