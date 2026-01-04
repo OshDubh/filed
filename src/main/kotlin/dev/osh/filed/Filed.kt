@@ -32,11 +32,13 @@ class Filed : JavaPlugin() {
             get("/file") { req ->
                 // read the path specified and check if it's allowed
                 val path = req.queryParam("path") ?: ""
-                val allowed = fileService.isAllowed(path)
-                if (allowed) {
-                    req.status(200)
-                } else {
-                    req.status(403)
+
+                when(val result = fileService.getFile(path)) {
+                    is Result.Success<String> -> req.result(result.data)
+                    is Result.Error -> {
+                        req.status(result.code)
+                        req.json(mapOf("error" to result.message))
+                    }
                 }
 
             }
