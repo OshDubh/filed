@@ -24,15 +24,8 @@ class FileService(
     fun read(requestedPath: String, lines: IntRange? = null, bytes: IntRange? = null, includeContent: Boolean = true): Result<Response> {
         // prevent .. escape
         val normalised = Path.of(requestedPath).normalize().toString()
-        if (normalised.startsWith("..")) {
-            return Result.Error("invalid path", 400)
-        }
-
-        // check if allowed by config
-        val allowed = normalised in allowedFiles || allowedDirectories.any {dir -> normalised.startsWith("$dir/") || normalised == dir}
-        if (!allowed) {
-            return Result.Error("path not allowed by existing configuration rules", 403)
-        }
+        val allowed = isAllowed(normalised)
+        if (allowed != null) return allowed
 
         val path = serverRoot.resolve(normalised)
 
@@ -43,6 +36,34 @@ class FileService(
             path.isRegularFile() -> getFile(normalised, path, includeContent)
             else -> Result.Error("neither a file nor a directory", 400)
         }
+    }
+
+    fun write(requestedPath: String, content: String): Result<Response> {
+        val normalised = Path.of(requestedPath).normalize().toString()
+        val allowed = isAllowed(normalised)
+        if (allowed != null) return allowed
+
+        val path = serverRoot.resolve(normalised)
+
+        if (path.isDirectory()) return Result.Error("cannot write to a directory", 400)
+        if (!path.parent.isDirectory()) return Result.Error("parent directory does not exist", 404)
+
+        val file = path.writeText(content)
+        return getFile(normalised, path, true)
+    }
+
+    private fun isAllowed(normalised: String): Result<Nothing>? {
+        if (normalised.startsWith("..")) {
+            return Result.Error("invalid path", 400)
+        }
+
+        // check if allowed by config
+        val allowed = normalised in allowedFiles || allowedDirectories.any {dir -> normalised.startsWith("$dir/") || normalised == dir}
+        if (!allowed) {
+            return Result.Error("path not allowed by existing configuration rules", 403)
+        }
+
+        return null
     }
     
     private fun getFiles(normalised: String, path: Path, includeContent: Boolean): Result<Response> {

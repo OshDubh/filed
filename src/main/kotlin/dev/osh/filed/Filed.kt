@@ -22,18 +22,28 @@ class Filed : JavaPlugin() {
         )
 
         // serve the API and respond to requests
-        app = Javalin.create { config ->
+        app = Javalin.create {config ->
             config.showJavalinBanner = false
         }.apply {
-            get("/health") { req ->
+            get("/health") {req ->
                 req.json(mapOf("status" to "ok"))
                 req.status(200)
             }
-            get("/files") { req ->
+            get("/files") {req ->
                 val path = req.queryParam("path") ?: ""
                 val includeContent = req.queryParam("content") == "true"
 
                 when(val result = fileService.read(path, includeContent = includeContent)) {
+                    is Result.Success -> req.json(result.data)
+                    is Result.Error -> {
+                        req.status(result.code)
+                        req.json(mapOf("error" to result.message))
+                    }
+                }
+            }
+            put("/files") {req ->
+                val path = req.queryParam("path") ?: ""
+                when(val result = fileService.write(path, req.body())) {
                     is Result.Success -> req.json(result.data)
                     is Result.Error -> {
                         req.status(result.code)
