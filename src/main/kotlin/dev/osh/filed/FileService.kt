@@ -46,10 +46,25 @@ class FileService(
         val path = serverRoot.resolve(normalised)
 
         if (path.isDirectory()) return Result.Error("cannot write to a directory", 400)
-        if (!path.parent.isDirectory()) return Result.Error("parent directory does not exist", 404)
+        if (!path.parent.isDirectory()) return Result.Error("parent directory does not exist", 400)
 
         val file = path.writeText(content)
         return getFile(normalised, path, true)
+    }
+
+    fun delete(requestedPath: String): Result<Response> {
+        val normalised = Path.of(requestedPath).normalize().toString()
+        val allowed = isAllowed(normalised)
+        if (allowed != null) return allowed
+
+        val path = serverRoot.resolve(normalised)
+        val content = path.readText()
+        if (path.isDirectory()) return Result.Error("cannot delete directories", 400)
+
+        return runCatching {path.deleteIfExists()}.fold(
+            onSuccess = {Result.Success(Response.File(path = normalised))},
+            onFailure = {Result.Error("error deleting file: ${it.message}", 500)}
+        )
     }
 
     private fun isAllowed(normalised: String): Result<Nothing>? {

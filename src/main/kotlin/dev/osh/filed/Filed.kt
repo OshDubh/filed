@@ -30,7 +30,7 @@ class Filed : JavaPlugin() {
                 req.status(200)
             }
             get("/files") {req ->
-                val path = req.queryParam("path") ?: ""
+                val path = req.queryParam("path")?: ""
                 val includeContent = req.queryParam("content") == "true"
 
                 when(val result = fileService.read(path, includeContent = includeContent)) {
@@ -44,6 +44,18 @@ class Filed : JavaPlugin() {
             put("/files") {req ->
                 val path = req.queryParam("path") ?: ""
                 when(val result = fileService.write(path, req.body())) {
+                    is Result.Success -> req.json(result.data)
+                    is Result.Error -> {
+                        req.status(result.code)
+                        req.json(mapOf("error" to result.message))
+                    }
+                }
+            }
+
+            delete("/files") {req ->
+                val path = req.queryParam("path")?: ""
+
+                when(val result = fileService.delete(path)) {
                     is Result.Success -> req.json(result.data)
                     is Result.Error -> {
                         req.status(result.code)
