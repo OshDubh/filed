@@ -20,66 +20,40 @@ class FileService(
     private val allowedDirectories: List<String>,
     private val serverRoot: Path
 ) {
-    
-    fun isAllowed(path: String): Boolean {
+
+    fun read(requestedPath: String, lines: IntRange? = null, bytes: IntRange? = null, includeContent: Boolean = true): Result<Response> {
         // prevent .. escape
-        val normalised = Path.of(path).normalize().toString()
+        val normalised = Path.of(requestedPath).normalize().toString()
         if (normalised.startsWith("..")) {
-            return false
+            return Result.Error("invalid path", 400)
         }
 
-        // if it's a file, just check it directly
-        if (normalised in allowedFiles) {
-            return true
+        // check if allowed by config
+        val allowed = normalised in allowedFiles || allowedDirectories.any {dir -> normalised.startsWith("$dir/") || normalised == dir}
+        if (!allowed) {
+            return Result.Error("path not allowed by existing configuration rules", 403)
         }
+        
+        val path = serverRoot.resolve(normalised)
 
-        // check both if it's in a directory that's allowed or it is just the directory specified
-        for (dir in allowedDirectories) {
-            if (normalised.startsWith("$dir/") || normalised == dir) {
-                return true
-            }
+        // delegate returning the correct response type
+        return when {
+            !path.exists() -> Result.Error("file not found", 404)
+            path.isDirectory() -> getFiles(path, includeContent)
+            path.isRegularFile() -> getFile(path, includeContent)
+            else -> Result.Error("neither a file nor a directory", 400)
         }
-
-        return false
     }
-
-    fun listFiles(dirpath: String, includeContent: Boolean): Result<Response> {
-        if (!isAllowed(dirpath)) {
-            return Result.Error("path not allowed by existing configuration", 403)
-        }
-        
-        val path = serverRoot.resolve(dirpath) // join the requested path with the local one
-
-        if (!path.exists()) {
-            return Result.Error("directory not found", 404)
-        }
-        
-        if (!path.isDirectory()) {
-            return Result.Error("not a directory", 400)
-        }
-
+    
+    private fun getFiles(normalised: String, path: Path, includeContent: Boolean): Result<Response> {
         val files = path.listDirectoryEntries()
             .filter {it.isRegularFile()}
             .map {entry -> Response.File(path = entry.fileName.toString(), content = if (includeContent) entry.readText() else null)}
 
-        return Result.Success(Response.Directory(path = Path.of(dirpath).normalize().toString(), files = files))
+        return Result.Success(Response.Directory(path = normalised, files = files))
     }
 
-    fun getFile(filepath: String, includeContent: Boolean): Result<Response> {
-        if (!isAllowed(filepath)) {
-            return Result.Error("file access not permitted by existing configuration", 403)
-        }
-
-        val path = serverRoot.resolve(filepath)
-
-        if (!path.exists()) {
-            return Result.Error("file not found", 404)
-        }
-
-        if (path.isDirectory()) {
-            return Result.Error("path is a directory", 400)
-        }
-
-        return Result.Success(Response.File(path = Path.of(filepath).normalize().toString(), content = if (includeContent) path.readText() else null))
+    private fun getFile(normalised: String, path: Path, includeContent: Boolean): Result<Response> {
+        return Result.Success(Response.File(path = normalised, content = if (includeContent) path.readText() else null))
     }
 }
