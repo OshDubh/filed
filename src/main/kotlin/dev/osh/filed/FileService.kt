@@ -9,6 +9,12 @@ sealed class Result<out T> {
     data class Error(val message: String, val code: Int) : Result<Nothing>() // Error has no data we want to return
 }
 
+// the structured response that we return upon success
+sealed class Response {
+    data class File(val path: String, val content: String? = null, val range: String? = null): Response()
+    data class Directory(val path: String, val files: List<File>): Response()
+}
+
 class FileService(
     private val allowedFiles: List<String>,
     private val allowedDirectories: List<String>,
@@ -37,7 +43,7 @@ class FileService(
         return false
     }
 
-    fun listFiles(dirpath: String): Result<List<String>> {
+    fun listFiles(dirpath: String, includeContent: Boolean): Result<Response> {
         if (!isAllowed(dirpath)) {
             return Result.Error("path not allowed by existing configuration", 403)
         }
@@ -52,11 +58,14 @@ class FileService(
             return Result.Error("not a directory", 400)
         }
 
-        val files = path.listDirectoryEntries().map { it.fileName.toString() }
-        return Result.Success(files)
+        val files = path.listDirectoryEntries()
+            .filter {it.isRegularFile()}
+            .map {entry -> Response.File(path = entry.fileName.toString(), content = if (includeContent) entry.readText() else null)}
+
+        return Result.Success(Response.Directory(path = Path.of(dirpath).normalize().toString(), files = files))
     }
 
-    fun getFile(filepath: String): Result<String> {
+    fun getFile(filepath: String, includeContent: Boolean): Result<Response> {
         if (!isAllowed(filepath)) {
             return Result.Error("file access not permitted by existing configuration", 403)
         }
@@ -71,6 +80,6 @@ class FileService(
             return Result.Error("path is a directory", 400)
         }
 
-        return Result.Success(path.readText())
+        return Result.Success(Response.File(path = Path.of(filepath).normalize().toString(), content = if (includeContent) path.readText() else null))
     }
 }
