@@ -33,7 +33,7 @@ class Filed : JavaPlugin() {
                 val path = req.queryParam("path") ?: ""
                 val includeContent = req.queryParam("content") == "true"
 
-                when(val result = fileService.read(path)) {
+                when(val result = fileService.read(path, includeContent = includeContent)) {
                     is Result.Success -> req.json(result.data)
                     is Result.Error -> {
                         req.status(result.code)
