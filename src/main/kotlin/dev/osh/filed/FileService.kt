@@ -3,8 +3,8 @@
  * reads/writes/deletes files defined by config access rules
  * created by osh
  *
- * created at 17:35 on Monday, the 05th of January, 2026
- * last modified at 17:35 on Monday, the 05th of January, 2026
+ * created at 11:46 on Friday, the 02nd of January, 2026
+ * last modified at 17:5 on Monday, the 05th of January, 2026
 */
 
 package dev.osh.filed
