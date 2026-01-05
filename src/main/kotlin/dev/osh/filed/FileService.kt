@@ -4,40 +4,39 @@
  * created by osh
  *
  * created at 11:46 on Friday, the 02nd of January, 2026
- * last modified at 17:5 on Monday, the 05th of January, 2026
-*/
+ * last modified at 00:25 on Tuesday, the 06th of January, 2026
+ */
 
 package dev.osh.filed
 
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path
 
 // tagged union; returns only T and is only one of Success or Error (which we construct here)
 sealed class Result<out T> {
-    data class Success<T>(val data: T): Result<T>() // T but output only
-    data class Error(val error: String, val message: String, val code: Int) : Result<Nothing>() // Error has no data we want to return
+    data class Success<T>(val data: T) : Result<T>()
+    data class Error(val error: String, val message: String, val code: Int) : Result<Nothing>()
 }
 
 // the structured response that we return upon success
 sealed class Response {
-    data class File(val type: String = "file", val path: String, val content: String? = null, val range: String? = null): Response()
-    data class Directory(val type: String = "directory", val path: String, val files: List<File>): Response()
+    data class File(val type: String = "file", val path: String, val content: String? = null, val range: String? = null) : Response()
+    data class Directory(val type: String = "directory", val path: String, val files: List<File>) : Response()
 }
 
 class FileService(
     private val allowedFiles: List<String>,
     private val allowedDirectories: List<String>,
     private val serverRoot: Path,
-    private val maximumAllowedFileSize: Int
+    private val maximumAllowedFileSize: Int,
 ) {
-
+    // return the file/directory details requested
     fun read(requestedPath: String, lines: IntRange? = null, bytes: IntRange? = null, includeContent: Boolean = true): Result<Response> {
         // prevent .. escape
         val normalised = Path.of(requestedPath).normalize().toString()
         val path = serverRoot.resolve(normalised)
         val allowed = isAllowed(normalised, path)
         if (allowed != null) return allowed
-
 
         // delegate returning the correct response type
         return when {
@@ -48,12 +47,12 @@ class FileService(
         }
     }
 
+    // modify the requested file with the content provided
     fun write(requestedPath: String, content: String): Result<Response> {
         val normalised = Path.of(requestedPath).normalize().toString()
         val path = serverRoot.resolve(normalised)
         val allowed = isAllowed(normalised, path)
         if (allowed != null) return allowed
-
 
         if (path.isDirectory()) return Result.Error("is_directory", "cannot write to a directory", 400)
         if (!path.parent.isDirectory()) return Result.Error("parent_not_found", "parent directory does not exist", 400)
@@ -62,6 +61,7 @@ class FileService(
         return getFile(normalised, path, true)
     }
 
+    // delete the requested file, not directory
     fun delete(requestedPath: String): Result<Response> {
         val normalised = Path.of(requestedPath).normalize().toString()
         val path = serverRoot.resolve(normalised)
@@ -73,22 +73,24 @@ class FileService(
 
         val content = path.readText()
 
-        return runCatching {path.deleteIfExists()}.fold(
-            onSuccess = {Result.Success(Response.File(path = normalised, content = content))},
-            onFailure = {Result.Error("delete_failed", "error deleting file: ${it.message}", 500)}
-        )
+        return runCatching { path.deleteIfExists() }
+            .fold(
+                onSuccess = { Result.Success(Response.File(path = normalised, content = content)) },
+                onFailure = { Result.Error("delete_failed", "error deleting file: ${it.message}", 500) },
+            )
     }
 
-    private fun isAllowed(normalised: String, path: Path): Result<Nothing>? {
-        if (normalised.startsWith("..")) {
-            return Result.Error("invalid_path", "invalid path", 400)
-        }
+    private fun isAllowed(
+        normalised: String,
+        path: Path,
+    ): Result<Nothing>? {
+        if (normalised.startsWith("..")) return Result.Error("invalid_path", "invalid path", 400)
 
         // check if allowed by config
-        val allowed = normalised in allowedFiles || allowedDirectories.any {dir -> normalised.startsWith("$dir/") || normalised == dir}
-        if (!allowed) {
-            return Result.Error("forbidden", "path not allowed by existing configuration rules", 403)
+        val allowed = normalised in allowedFiles || allowedDirectories.any { dir ->
+            normalised.startsWith("$dir/") || normalised == dir
         }
+        if (!allowed) return Result.Error("forbidden", "path not allowed by existing configuration rules", 403)
 
         if (path.exists()) {
             if (!path.toRealPath().startsWith(serverRoot.toRealPath())) {
@@ -102,18 +104,19 @@ class FileService(
 
         return null
     }
-    
+
     private fun getFiles(normalised: String, path: Path, includeContent: Boolean): Result<Response> {
-        // list all the files in the directory, filtering out any directories, and including their contentents if requested
-        val files = path.listDirectoryEntries()
-            .filter {it.isRegularFile()}
-            .map {entry -> Response.File(path = entry.fileName.toString(), content = if (includeContent) entry.readText() else null)}
+        // list all the files in the directory, filtering out any directories
+        val files = path
+            .listDirectoryEntries()
+            .filter { it.isRegularFile() }
+            .map { entry -> Response.File(path = entry.fileName.toString(), content = if (includeContent) entry.readText() else null) }
 
         return Result.Success(Response.Directory(path = normalised, files = files))
     }
 
     private fun getFile(normalised: String, path: Path, includeContent: Boolean): Result<Response> {
-        // just return both the normalised filepath and the content of the file as text, if requested from the API
+        // just return both the normalised filepath and the content of the file as text, requested from the API
         return Result.Success(Response.File(path = normalised, content = if (includeContent) path.readText() else null))
     }
 }
