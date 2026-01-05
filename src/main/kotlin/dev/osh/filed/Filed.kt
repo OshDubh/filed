@@ -1,3 +1,12 @@
+/*
+ * Filed.kt
+ * main
+ * created by osh
+ *
+ * created at 18:37 on Sunday, the 27th of December, 2025
+ * last modified at 17:30 on Monday, the 05th of January, 2026
+*/
+
 package dev.osh.filed
 
 import io.javalin.Javalin
@@ -78,3 +87,8 @@ class Filed : JavaPlugin() {
         logger.info("Filed stopped")
     }
 }
+
+class Filed {
+	
+}
+ 

@@ -1,3 +1,12 @@
+/*
+ * FileService.kt
+ * reads/writes/deletes files defined by config access rules
+ * created by osh
+ *
+ * created at 17:35 on Monday, the 05th of January, 2026
+ * last modified at 17:35 on Monday, the 05th of January, 2026
+*/
+
 package dev.osh.filed
 
 import java.nio.file.Path
