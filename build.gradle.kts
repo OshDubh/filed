@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
+    kotlin("jvm") version "2.1.0"
     id("com.gradleup.shadow") version "9.0.0-beta12"
 }
 
@@ -18,8 +18,8 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     implementation(kotlin("stdlib"))
     implementation("io.javalin:javalin:6.7.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.20.1")
-    implementation("tools.jackson.module:jackson-module-kotlin:3.0.0-SNAPSHOT")
+    implementation("tools.jackson.core:jackson-databind:3.0.3")
+    implementation("tools.jackson.module:jackson-module-kotlin:3.0.3")
 }
 
 java {
