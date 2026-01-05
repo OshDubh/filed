@@ -2,6 +2,11 @@ package dev.osh.filed
 
 import io.javalin.Javalin
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.command.Command
+import org.bukkit.command.CommandExecutor
+import org.bukkit.command.CommandSender
+import java.security.SecureRandom
+import java.util.Base64
 
 class Filed : JavaPlugin() {
 
