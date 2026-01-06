@@ -4,13 +4,13 @@
  * created by osh
  *
  * created at 11:46 on Friday, the 02nd of January, 2026
- * last modified at 00:25 on Tuesday, the 06th of January, 2026
+ * last modified at 23:21 on Tuesday, the 06th of January, 2026
  */
 
 package dev.osh.filed
 
 import java.nio.file.Path
-import kotlin.io.path
+import kotlin.io.path.*
 
 // tagged union; returns only T and is only one of Success or Error (which we construct here)
 sealed class Result<out T> {
