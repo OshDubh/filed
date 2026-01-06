@@ -1,5 +1,6 @@
 port: 9847
 maximum_allowed_file_size: 1000000
+auth_token_file: "tokens.json"
 
 allowed:
   files:
