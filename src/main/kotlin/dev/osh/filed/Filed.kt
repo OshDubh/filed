@@ -4,7 +4,7 @@
  * created by osh
  *
  * created at 18:37 on Sunday, the 27th of December, 2025
- * last modified at 23:15 on Tuesday, the 06th of January, 2026
+ * last modified at 23:34 on Tuesday, the 06th of January, 2026
  */
 
 package dev.osh.filed
@@ -52,7 +52,7 @@ class Filed : JavaPlugin() {
                 }
 
                 get("/health") { req ->
-                    req.json(mapOf("status" to "ok"))
+                    req.json(mapOf("message" to "ok"))
                     req.status(200)
                 }
 
@@ -66,7 +66,7 @@ class Filed : JavaPlugin() {
 
                         is Result.Error -> {
                             req.status(result.code)
-                            req.json(mapOf("error" to result.message))
+                            req.json(mapOf("error" to result.error, "message" to result.message))
                         }
                     }
                 }
@@ -79,7 +79,7 @@ class Filed : JavaPlugin() {
 
                         is Result.Error -> {
                             req.status(result.code)
-                            req.json(mapOf("error" to result.message))
+                            req.json(mapOf("error" to result.error, "message" to result.message))
                         }
                     }
                 }
@@ -93,7 +93,7 @@ class Filed : JavaPlugin() {
 
                         is Result.Error -> {
                             req.status(result.code)
-                            req.json(mapOf("error" to result.message))
+                            req.json(mapOf("error" to result.error, "message" to result.message))
                         }
                     }
                 }

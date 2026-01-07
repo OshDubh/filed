@@ -4,7 +4,7 @@
  * created by osh
  *
  * created at 11:46 on Friday, the 02nd of January, 2026
- * last modified at 23:21 on Tuesday, the 06th of January, 2026
+ * last modified at 23:34 on Tuesday, the 06th of January, 2026
  */
 
 package dev.osh.filed
@@ -57,7 +57,7 @@ class FileService(
         if (path.isDirectory()) return Result.Error("is_directory", "cannot write to a directory", 400)
         if (!path.parent.isDirectory()) return Result.Error("parent_not_found", "parent directory does not exist", 400)
 
-        val file = path.writeText(content)
+        path.writeText(content)
         return getFile(normalised, path, true)
     }
 
