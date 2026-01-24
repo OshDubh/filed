@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: jdk 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: build
+        run: ./gradlew build
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: filed-${{ github.sha }}
+          path: build/libs/filed-*.jar
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: jdk 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: build
+        run: ./gradlew build
+
+      - name: release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/filed-*.jar
+          generate_release_notes: true
