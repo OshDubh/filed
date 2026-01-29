@@ -1,16 +1,16 @@
 # Filed
+Filed is a PaperMC plugin that exposes server files over a REST API with token auth and path whitelisting. 
 
-Paper plugin that exposes server files over a REST API with token auth and path whitelisting.
+Read, create, delete and modify explicitly allowed server files via an API endpoint hosted by your server. Access is gated, and requires an API key that you generate to be included with all requests.
 
 ## Installation
 
-1. Download the latest JAR from [Releases](../../releases)
-2. Place in your server's `plugins/` directory
-3. Restart the server
-4. Configure `plugins/Filed/config.yml`
+2. Place the JAR in your server's `plugins/` directory`
+3. Restart the server.
+4. Configure `plugins/Filed/config.yml`.
 
 ## Configuration
-
+Example config:
 ```yaml
 port: 9847
 maximum_allowed_file_size: 1000000
@@ -31,7 +31,7 @@ allowed:
 | `allowed.files` | Exact file paths that can be accessed |
 | `allowed.directories` | Directories (and their contents) that can be accessed |
 
-Paths are relative to the server root (where `server.properties` lives).
+Paths are relative to the server root (the same directory where `server.properties` lives).
 
 ## Authentication
 
@@ -41,33 +41,19 @@ Generate a token in-game or via console:
 /filed generate <name>
 ```
 
-Requires operator permissions. The token is shown once and cannot be retrieved later. Store it immediately.
+Requires op permissions. The token is shown once and cannot be retrieved later.
 
-Use the token in requests:
-
-```
-Authorization: Bearer <token>
-```
+Use the token in requests by including `Bearer <token>` as the `Authorization` header. 
 
 ## API
 
-All file endpoints require authentication. Paths are passed as query parameters.
-
-### Health Check
-
-```
-GET /health
-```
-
-No auth required. Returns `{"message": "ok"}` if the API service is running and can be connected to.
-
-### Read File or Directory
+### Read
 
 ```
 GET /files?path=<path>&content=<true|false>
 ```
 
-For files:
+Example response for files:
 ```json
 {
   "type": "file",
@@ -76,7 +62,7 @@ For files:
 }
 ```
 
-For directories: [does not include directories nor sub-directory files]
+Example response for directories: [does not include directories nor sub-directory files]
 ```json
 {
   "type": "directory",
@@ -89,7 +75,7 @@ For directories: [does not include directories nor sub-directory files]
 
 Set `content=false` to omit file contents.
 
-### Write File
+### Write
 
 ```
 PUT /files?path=<path>
@@ -98,18 +84,26 @@ Content-Type: text/plain
 <file content>
 ```
 
-Creates or overwrites the file. Parent directory must exist.
+Creates or overwrites the file. Parent directory must exist. Returns the file contents of the modified file. Only files can be written to.
 
-### Delete File
+### Delete
 
 ```
 DELETE /files?path=<path>
 ```
 
-Returns the deleted file's content in the response.
+Returns the deleted file's content in the response. Only files can be deleted, not directories.
+
+### Health Check
+
+```
+GET /health
+```
+This endpoint can be checked without authorisation, and can be used just to make sure that the API endpoint is up and running. Returns `{"message": "ok"}` if it's all good.
+
 
 ## Errors
-
+Example unsuccessful response:
 ```json
 {
   "error": "forbidden",
@@ -117,6 +111,7 @@ Returns the deleted file's content in the response.
 }
 ```
 
+The full list of all error codes and their meaning:
 | Error | Code | Meaning |
 |-------|------|---------|
 | `unauthorized` | 401 | Missing or invalid token |
@@ -127,18 +122,9 @@ Returns the deleted file's content in the response.
 | `parent_not_found` | 400 | Parent directory doesn't exist (for writes) |
 | `too_large` | 413 | File exceeds size limit |
 
-## Security Considerations
-
-- Paths are normalized and checked against the whitelist before any operation
-- `..` traversal is blocked
-- Symlinks that resolve outside the server root are rejected
-- Tokens are SHA-256 hashed before storage
-- File size limits prevent memory exhaustion
-
-## Building
-
-```
-./gradlew build
-```
-
-JAR is output to `build/libs/filed-<version>.jar`.
+## Security
+- Paths are normalized and checked against the whitelist before any operation, escaping any `..` traversal.
+- Symlinks that resolve outside the server root are rejected.
+- Tokens are SHA-256 hashed before storage, and used just to verify access.
+- Configurable file size limits prevent memory exhaustion.
+- Sub-directory traversal is not permitted. If a directory is requested, only the files included in that directory are returned.
