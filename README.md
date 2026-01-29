@@ -117,7 +117,7 @@ The full list of all error codes and their meaning:
 | `unauthorized` | 401 | Missing or invalid token |
 | `forbidden` | 403 | Path not in whitelist or symlink escape |
 | `not_found` | 404 | File doesn't exist |
-| `invalid_path` | 400 | Path traversal attempt |
+| `invalid_path` | 400 | Provided path isn't valid |
 | `is_directory` | 400 | Can't write/delete directories |
 | `parent_not_found` | 400 | Parent directory doesn't exist (for writes) |
 | `too_large` | 413 | File exceeds size limit |
